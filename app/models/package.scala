@@ -1,10 +1,37 @@
 package models
 
+import java.sql.Timestamp
 import java.time.format.DateTimeFormatter
-import java.time.{LocalDateTime, ZoneOffset, ZonedDateTime}
+import java.time.{LocalDateTime, ZoneId, ZoneOffset, ZonedDateTime}
+import javax.inject.{Inject, Singleton}
 
+import scala.concurrent.{ExecutionContext, Future}
+
+import play.api.db.slick.{DatabaseConfigProvider, HasDatabaseConfigProvider}
 import play.api.libs.json._
+import slick.ast.BaseTypedType
+import slick.jdbc.JdbcProfile
+import slick.jdbc.PostgresProfile.api._
 
+object ZonedDateTimeUtils {
+  // Custom formatter that doesn't include zone ID (like [Asia/Tokyo])
+  private val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSSSSX")
+
+  // Store ZonedDateTime as Timestamp for PostgreSQL
+  implicit val zonedDateTimeColumnType: BaseColumnType[ZonedDateTime] = MappedColumnType.base[ZonedDateTime, Timestamp](
+    // To database: Convert ZonedDateTime to SQL Timestamp preserving the instant
+    zonedDateTime => Timestamp.from(zonedDateTime.toInstant),
+
+    // From database: Convert SQL Timestamp to ZonedDateTime using fixed offset
+    timestamp => {
+      val instant = timestamp.toInstant
+      // Use ZoneOffset.ofHours(9) for Japan timezone without zone ID
+      val zdt = ZonedDateTime.ofInstant(instant, ZoneOffset.ofHours(9))
+      // Format and parse to remove zone ID
+      ZonedDateTime.parse(zdt.format(formatter), formatter)
+    }
+  )
+}
 package object models {
   // Use the same formatter pattern as in ZonedDateTimeUtils
   private val zonedDateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSSSSX")
