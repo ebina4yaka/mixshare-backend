@@ -1,13 +1,13 @@
 package controllers
 
 import java.time.ZonedDateTime
-import javax.inject._
+import javax.inject.*
 
 import scala.concurrent.ExecutionContext
 
 import models.{User, UserRepository}
-import play.api.libs.json._
-import play.api.mvc._
+import play.api.libs.json.*
+import play.api.mvc.*
 
 @Singleton
 class UserController @Inject() (
@@ -18,10 +18,10 @@ class UserController @Inject() (
 
   // Safe user representation without sensitive fields
   case class SafeUser(
-    id: Option[Long],
-    username: String,
-    createdAt: ZonedDateTime,
-    updatedAt: ZonedDateTime
+      id: Option[Long],
+      username: String,
+      createdAt: ZonedDateTime,
+      updatedAt: ZonedDateTime
   )
 
   // Convert User to SafeUser
@@ -41,7 +41,8 @@ class UserController @Inject() (
   def getUser(id: Long): Action[AnyContent] = Action.async { implicit request =>
     userRepository.getById(id).map {
       case Some(user) => Ok(Json.toJson(toSafeUser(user)))
-      case None => NotFound(Json.obj("message" -> s"User with id $id not found"))
+      case None =>
+        NotFound(Json.obj("message" -> s"User with id $id not found"))
     }
   }
 }

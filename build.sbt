@@ -16,7 +16,8 @@ lazy val root = (project in file("."))
       "org.postgresql" % "postgresql" % "42.7.5",
       "com.typesafe.play" %% "play-slick" % "5.3.1",
       "com.typesafe.play" %% "play-slick-evolutions" % "5.3.1",
-      "org.scalatestplus.play" %% "scalatestplus-play" % "7.0.1" % Test
+      "org.scalatestplus.play" %% "scalatestplus-play" % "7.0.1" % Test,
+      "org.typelevel" %% "cats-core" % "2.13.0"
     ),
     // Add routing settings for Scala 3
     scalacOptions ++= Seq("-Xignore-scala2-macros", "-source:3.3"),

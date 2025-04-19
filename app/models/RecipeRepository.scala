@@ -7,14 +7,16 @@ import scala.concurrent.{ExecutionContext, Future}
 
 import play.api.db.slick.{DatabaseConfigProvider, HasDatabaseConfigProvider}
 import slick.jdbc.JdbcProfile
-import slick.jdbc.PostgresProfile.api._
+import slick.jdbc.PostgresProfile.api.*
 
 @Singleton
-class RecipeRepository @Inject()(protected val dbConfigProvider: DatabaseConfigProvider)(implicit ec: ExecutionContext)
-  extends HasDatabaseConfigProvider[JdbcProfile] {
+class RecipeRepository @Inject() (
+    protected val dbConfigProvider: DatabaseConfigProvider
+)(implicit ec: ExecutionContext)
+    extends HasDatabaseConfigProvider[JdbcProfile] {
 
-  import ZonedDateTimeUtils._  // Import the ZonedDateTime column mapper
-  
+  import ZonedDateTimeUtils.* // Import the ZonedDateTime column mapper
+
   // Recipe table definition
   class RecipeTable(tag: Tag) extends Table[RecipeEntity](tag, "recipe") {
     def id = column[Long]("id", O.PrimaryKey, O.AutoInc)
@@ -24,7 +26,8 @@ class RecipeRepository @Inject()(protected val dbConfigProvider: DatabaseConfigP
     def createdAt = column[ZonedDateTime]("created_at")
     def updatedAt = column[ZonedDateTime]("updated_at")
 
-    def * = (id.?, name, description, userId, createdAt, updatedAt).mapTo[RecipeEntity]
+    def * = (id.?, name, description, userId, createdAt, updatedAt)
+      .mapTo[RecipeEntity]
   }
 
   // Flavor table definition
@@ -35,8 +38,12 @@ class RecipeRepository @Inject()(protected val dbConfigProvider: DatabaseConfigP
     def quantity = column[Long]("quantity")
 
     def * = (id.?, name, recipeId, quantity).mapTo[Flavor]
-    
-    def recipe = foreignKey("fk_recipe", recipeId, recipes)(_.id, onUpdate=ForeignKeyAction.Restrict, onDelete=ForeignKeyAction.Cascade)
+
+    def recipe = foreignKey("fk_recipe", recipeId, recipes)(
+      _.id,
+      onUpdate = ForeignKeyAction.Restrict,
+      onDelete = ForeignKeyAction.Cascade
+    )
   }
 
   val recipes = TableQuery[RecipeTable]
@@ -51,7 +58,9 @@ class RecipeRepository @Inject()(protected val dbConfigProvider: DatabaseConfigP
       recipeOpt <- db.run(recipeQuery.result.headOption)
       flavorsForRecipe <- db.run(flavorQuery.result)
     } yield {
-      recipeOpt.map(recipeEntity => Recipe.fromEntity(recipeEntity, flavorsForRecipe))
+      recipeOpt.map(recipeEntity =>
+        Recipe.fromEntity(recipeEntity, flavorsForRecipe)
+      )
     }
   }
 }
