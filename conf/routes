@@ -2,9 +2,6 @@
 # This file defines all application routes (Higher priority routes first)
 # https://www.playframework.com/documentation/latest/ScalaRouting
 
-# An example controller showing a sample home page
-GET        /hello                  controllers.HomeController.hello()
-
 # User endpoint - Get a user by ID
 GET        /api/users/:id          controllers.UserController.getUser(id: Long)
 

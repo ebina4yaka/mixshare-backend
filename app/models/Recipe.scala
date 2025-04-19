@@ -28,8 +28,8 @@ case class Recipe(
 case class FindRecipesParams(
     keyword: Option[String] = None,
     userId: Option[Long] = None,
-    page: Int = 1,
-    pageSize: Int = 10
+    pageSize: Int = 10,
+    lastSeen: Option[Long] = None
 )
 
 object FindRecipesParams {
@@ -45,25 +45,47 @@ object FindRecipesParams {
       ): Option[Either[String, FindRecipesParams]] = {
         val keyword = stringBinder.bind("keyword", params)
         val userId = longBinder.bind("userId", params)
-        val page = intBinder.bind("page", params)
+        val lastSeen = longBinder.bind("lastSeen", params)
         val pageSize = intBinder.bind("pageSize", params)
 
-        val result = (keyword, userId, page, pageSize) match {
+        val result = (keyword, userId, lastSeen, pageSize) match {
           case (
                 Some(Right(keyword)),
                 Some(Right(userId)),
-                Some(Right(page)),
+                Some(Right(lastSeen)),
                 Some(Right(pageSize))
               ) =>
             Right(
-              FindRecipesParams(Some(keyword), Some(userId), page, pageSize)
+              FindRecipesParams(
+                Some(keyword),
+                Some(userId),
+                pageSize,
+                Some(lastSeen)
+              )
             )
           case (Some(Right(keyword)), _, _, _) =>
             Right(FindRecipesParams(Some(keyword), None))
-          case (_, Some(Right(userId)), _, _) =>
-            Right(FindRecipesParams(None, Some(userId)))
-          case (_, _, Some(Right(page)), Some(Right(pageSize))) =>
-            Right(FindRecipesParams(None, None, page, pageSize))
+          case (
+                Some(Right(keyword)),
+                Some(Right(userId)),
+                _,
+                Some(Right(pageSize))
+              ) =>
+            Right(
+              FindRecipesParams(Some(keyword), Some(userId), pageSize, None)
+            )
+          case (Some(Right(keyword)), _, Some(Right(lastSeen)), _) =>
+            Right(FindRecipesParams(Some(keyword), None, 10, Some(lastSeen)))
+          case (Some(Right(keyword)), _, _, Some(Right(pageSize))) =>
+            Right(FindRecipesParams(Some(keyword), None, pageSize, None))
+          case (_, Some(Right(userId)), Some(Right(lastSeen)), _) =>
+            Right(FindRecipesParams(None, Some(userId), 10, Some(lastSeen)))
+          case (_, Some(Right(userId)), _, Some(Right(pageSize))) =>
+            Right(FindRecipesParams(None, Some(userId), pageSize, None))
+          case (_, _, Some(Right(lastSeen)), Some(Right(pageSize))) =>
+            Right(FindRecipesParams(None, None, pageSize, Some(lastSeen)))
+          case (_, _, _, Some(Right(pageSize))) =>
+            Right(FindRecipesParams(None, None, pageSize, None))
           case (_, _, _, _) =>
             Right(FindRecipesParams(None, None))
         }
@@ -72,10 +94,15 @@ object FindRecipesParams {
       }
 
       override def unbind(key: String, params: FindRecipesParams): String = {
-        stringBinder.unbind("keyword", params.keyword.getOrElse("")) +
-          "&" + longBinder.unbind("userId", params.userId.getOrElse(0L)) +
-          "&" + intBinder.unbind("page", params.page) +
-          "&" + intBinder.unbind("pageSize", params.pageSize)
+        val base =
+          stringBinder.unbind("keyword", params.keyword.getOrElse("")) +
+            "&" + longBinder.unbind("userId", params.userId.getOrElse(0L)) +
+            "&" + intBinder.unbind("pageSize", params.pageSize)
+
+        params.lastSeen match {
+          case Some(id) => base + "&" + longBinder.unbind("lastSeen", id)
+          case None     => base
+        }
       }
     }
 }
