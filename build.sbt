@@ -19,7 +19,9 @@ lazy val root = (project in file("."))
       "org.scalatestplus.play" %% "scalatestplus-play" % "7.0.1" % Test,
       "org.typelevel" %% "cats-core" % "2.13.0",
       "com.auth0" % "java-jwt" % "4.4.0",
-      "redis.clients" % "jedis" % "5.1.0"
+      "redis.clients" % "jedis" % "5.1.0",
+      "com.h2database" % "h2" % "2.2.224" % Test,
+      "org.mockito" % "mockito-core" % "5.10.0" % Test
     ),
     // Add routing settings for Scala 3
     scalacOptions ++= Seq("-Xignore-scala2-macros", "-source:3.3"),

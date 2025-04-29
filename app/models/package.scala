@@ -8,10 +8,10 @@ import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
 import play.api.db.slick.{DatabaseConfigProvider, HasDatabaseConfigProvider}
-import play.api.libs.json.*
+import play.api.libs.json._
 import slick.ast.BaseTypedType
 import slick.jdbc.JdbcProfile
-import slick.jdbc.PostgresProfile.api.*
+import slick.jdbc.PostgresProfile.api._
 
 object ZonedDateTimeUtils {
   // Custom formatter that doesn't include zone ID (like [Asia/Tokyo])

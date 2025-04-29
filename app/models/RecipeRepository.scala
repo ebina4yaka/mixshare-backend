@@ -7,7 +7,7 @@ import scala.concurrent.{ExecutionContext, Future}
 
 import play.api.db.slick.{DatabaseConfigProvider, HasDatabaseConfigProvider}
 import slick.jdbc.JdbcProfile
-import slick.jdbc.PostgresProfile.api.*
+import slick.jdbc.PostgresProfile.api._
 
 @Singleton
 class RecipeRepository @Inject() (
