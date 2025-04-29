@@ -2,7 +2,15 @@
 # This file defines all application routes (Higher priority routes first)
 # https://www.playframework.com/documentation/latest/ScalaRouting
 
-# User endpoint - Get a user by ID
+# Authentication endpoints
+POST       /api/auth/login         controllers.AuthController.login()
+POST       /api/auth/register      controllers.UserController.register()
+POST       /api/auth/logout        controllers.AuthController.logout()
+POST       /api/auth/refresh       controllers.AuthController.refreshToken()
+GET        /api/auth/verify        controllers.AuthController.verifyToken()
+
+# User endpoints
+GET        /api/users/profile      controllers.UserController.getProfile()
 GET        /api/users/:id          controllers.UserController.getUser(id: Long)
 
 # Recipe endpoint - Get a recipe by ID with its flavors

@@ -7,7 +7,7 @@ import scala.concurrent.{ExecutionContext, Future}
 
 import play.api.db.slick.{DatabaseConfigProvider, HasDatabaseConfigProvider}
 import slick.jdbc.JdbcProfile
-import slick.jdbc.PostgresProfile.api.*
+import slick.jdbc.PostgresProfile.api._
 
 @Singleton
 class UserRepository @Inject() (
@@ -42,5 +42,25 @@ class UserRepository @Inject() (
   def getById(id: Long): Future[Option[User]] = {
     val query = users.filter(_.id === id)
     db.run(query.result.headOption)
+  }
+
+  // Find user by username
+  def findByUsername(username: String): Future[Option[User]] = {
+    val query = users.filter(_.username === username)
+    db.run(query.result.headOption)
+  }
+
+  // Find user by email
+  def findByEmail(email: String): Future[Option[User]] = {
+    val query = users.filter(_.email === email)
+    db.run(query.result.headOption)
+  }
+
+  // Create a new user
+  def create(user: User): Future[User] = {
+    val insertQuery = users returning users.map(_.id) into ((user, id) =>
+      user.copy(id = Some(id))
+    )
+    db.run(insertQuery += user)
   }
 }
