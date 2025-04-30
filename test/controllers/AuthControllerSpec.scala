@@ -5,7 +5,7 @@ import java.time.ZonedDateTime
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
-import helpers.TestHelpers
+import helpers.{TestHelpers, TestWithDBCleaner}
 import models.{
   LoginRequestTest,
   LoginResponseTest,
@@ -27,7 +27,7 @@ import play.api.test._
 import service.{AuthService, JwtService, TokenBlacklistService}
 
 class AuthControllerSpec
-    extends TestHelpers
+    extends TestWithDBCleaner
     with GuiceOneAppPerSuite
     with MockitoSugar
     with BeforeAndAfterEach {

@@ -5,7 +5,7 @@ import java.time.ZonedDateTime
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
-import helpers.TestHelpers
+import helpers.{TestHelpers, TestWithDBCleaner}
 import models.{FindRecipesParams, Recipe, RecipeRepository}
 import org.mockito.ArgumentMatchers._
 import org.mockito.Mockito._
@@ -21,7 +21,7 @@ import play.api.test._
 import service.RecipeService
 
 class RecipeControllerSpec
-    extends TestHelpers
+    extends TestWithDBCleaner
     with GuiceOneAppPerSuite
     with MockitoSugar
     with BeforeAndAfterEach {

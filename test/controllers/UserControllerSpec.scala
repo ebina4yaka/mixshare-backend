@@ -6,7 +6,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
 import actions.AuthAction
-import helpers.TestHelpers
+import helpers.{TestHelpers, TestWithDBCleaner}
 import models.{RegistrationRequestTest, User, UserRepository}
 import org.mockito.ArgumentMatchers._
 import org.mockito.Mockito._
@@ -22,7 +22,7 @@ import play.api.test._
 import service.{AuthService, JwtService}
 
 class UserControllerSpec
-    extends TestHelpers
+    extends TestWithDBCleaner
     with GuiceOneAppPerSuite
     with MockitoSugar
     with BeforeAndAfterEach {
@@ -49,7 +49,7 @@ class UserControllerSpec
   "UserController register" should {
     "return 201 when user registration is successful" in {
       val registerRequest =
-        RegistrationRequestTest("newuser", "user@example.com", "password123")
+        RegistrationRequestTest("newuser", "user@example.com", "password@123")
       val now = ZonedDateTime.now()
       val newUser =
         User(Some(1L), "newuser", "user@example.com", now, now)
@@ -75,7 +75,7 @@ class UserControllerSpec
       val registerRequest = RegistrationRequestTest(
         "existinguser",
         "user@example.com",
-        "password123"
+        "password@123"
       )
 
       when(mockAuthService.register(any[String], any[String], any[String]))
@@ -99,7 +99,7 @@ class UserControllerSpec
       val registerRequest = RegistrationRequestTest(
         "newuser",
         "existing@example.com",
-        "password123"
+        "password@123"
       )
 
       when(mockAuthService.register(any[String], any[String], any[String]))
