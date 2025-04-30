@@ -190,58 +190,75 @@ class AuthController @Inject() (
       )
   }
 
+  // Logout request model
+  case class LogoutRequest(refreshToken: String)
+
+  // JSON formatter for logout request
+  implicit val logoutRequestFormat: Format[LogoutRequest] =
+    Json.format[LogoutRequest]
+
   // POST endpoint for logout - invalidates both access and refresh tokens
-  def logout(): Action[AnyContent] = Action.async { implicit request =>
-    // Get access token from header
-    val accessTokenOpt =
-      request.headers.get("Authorization").map { authHeader =>
-        if (authHeader.startsWith("Bearer ")) {
-          authHeader.substring(7) // Remove "Bearer " prefix
-        } else {
-          authHeader
+  def logout(): Action[JsValue] = Action.async(parse.json) { implicit request =>
+    // Validate request body
+    val logoutResult = request.body.validate[LogoutRequest]
+
+    logoutResult.fold(
+      errors => {
+        Future.successful(
+          BadRequest(
+            Json.obj(
+              "success" -> false,
+              "message" -> "Invalid request format: refreshToken is required"
+            )
+          )
+        )
+      },
+      logout => {
+        // Get access token from header
+        val accessTokenOpt =
+          request.headers.get("Authorization").map { authHeader =>
+            if (authHeader.startsWith("Bearer ")) {
+              authHeader.substring(7) // Remove "Bearer " prefix
+            } else {
+              authHeader
+            }
+          }
+
+        // Process both tokens
+        val accessTokenFuture = accessTokenOpt match {
+          case Some(token) => jwtService.invalidateAccessToken(token)
+          case None => Future.successful(false) // No access token to invalidate
+        }
+
+        val refreshTokenFuture =
+          jwtService.invalidateRefreshToken(logout.refreshToken)
+
+        // Wait for both operations to complete
+        for {
+          accessResult <- accessTokenFuture
+          refreshResult <- refreshTokenFuture
+        } yield {
+          if (accessResult && refreshResult) {
+            Ok(
+              Json.toJson(
+                LogoutResponse(
+                  success = true,
+                  message = "Successfully logged out"
+                )
+              )
+            )
+          } else {
+            InternalServerError(
+              Json.toJson(
+                LogoutResponse(
+                  success = false,
+                  message = "Failed to invalidate one or more tokens"
+                )
+              )
+            )
+          }
         }
       }
-
-    // Get refresh token from body
-    val refreshTokenOpt = request.body.asJson.flatMap { json =>
-      (json \ "refreshToken").asOpt[String]
-    }
-
-    // Process both tokens
-    val accessTokenFuture = accessTokenOpt match {
-      case Some(token) => jwtService.invalidateAccessToken(token)
-      case None => Future.successful(false) // No access token to invalidate
-    }
-
-    val refreshTokenFuture = refreshTokenOpt match {
-      case Some(token) => jwtService.invalidateRefreshToken(token)
-      case None => Future.successful(false) // No refresh token to invalidate
-    }
-
-    // Wait for both operations to complete
-    for {
-      accessResult <- accessTokenFuture
-      refreshResult <- refreshTokenFuture
-    } yield {
-      if (accessResult && refreshResult) {
-        Ok(
-          Json.toJson(
-            LogoutResponse(
-              success = true,
-              message = "Successfully logged out"
-            )
-          )
-        )
-      } else {
-        InternalServerError(
-          Json.toJson(
-            LogoutResponse(
-              success = false,
-              message = "Failed to invalidate one or more tokens"
-            )
-          )
-        )
-      }
-    }
+    )
   }
 }

@@ -1,0 +1,304 @@
+swagger: "2.0"
+info:
+  title: SS API
+  description: Recipe and User Management API
+  version: "1.0.0"
+  contact:
+    name: SS API Support
+basePath: /api
+produces:
+  - application/json
+paths:
+  /auth/login:
+    post:
+      tags:
+        - Auth
+      summary: Login to the application
+      description: Authenticate a user and retrieve access and refresh tokens
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      parameters:
+        - in: body
+          name: body
+          description: Login credentials
+          required: true
+          schema:
+            $ref: '#/definitions/LoginRequest'
+      responses:
+        200:
+          description: Successful login
+          schema:
+            $ref: '#/definitions/AuthResponse'
+        401:
+          description: Invalid credentials
+  /auth/register:
+    post:
+      tags:
+        - Auth
+      summary: Register a new user
+      description: Create a new user account
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      parameters:
+        - in: body
+          name: body
+          description: User registration data
+          required: true
+          schema:
+            $ref: '#/definitions/RegisterRequest'
+      responses:
+        201:
+          description: User registered successfully
+          schema:
+            $ref: '#/definitions/UserResponse'
+        400:
+          description: Invalid input data
+  /auth/logout:
+    post:
+      tags:
+        - Auth
+      summary: Log out from the application
+      description: Invalidate the current access token
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: body
+          name: body
+          description: User registration data
+          required: true
+          schema:
+            $ref: '#/definitions/LogoutRequest'
+      responses:
+        200:
+          description: Successfully logged out
+        401:
+          description: Unauthorized
+  /auth/refresh:
+    post:
+      tags:
+        - Auth
+      summary: Refresh access token
+      description: Get a new access token using a refresh token
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      parameters:
+        - in: body
+          name: body
+          description: Refresh token
+          required: true
+          schema:
+            $ref: '#/definitions/RefreshTokenRequest'
+      responses:
+        200:
+          description: Token refreshed successfully
+          schema:
+            $ref: '#/definitions/AuthResponse'
+        401:
+          description: Invalid refresh token
+  /auth/verify:
+    get:
+      tags:
+        - Auth
+      summary: Verify token
+      description: Verify if the current token is valid
+      security:
+        - BearerAuth: []
+      responses:
+        200:
+          description: Token is valid
+        401:
+          description: Token is invalid
+  /users/profile:
+    get:
+      tags:
+        - User
+      summary: Get user profile
+      description: Get the profile of the authenticated user
+      security:
+        - BearerAuth: []
+      responses:
+        200:
+          description: User profile
+          schema:
+            $ref: '#/definitions/UserResponse'
+        401:
+          description: Unauthorized
+  /users/{id}:
+    get:
+      tags:
+        - User
+      summary: Get user by ID
+      description: Get user information by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          type: integer
+          format: int64
+      security:
+        - BearerAuth: []
+      responses:
+        200:
+          description: User information
+          schema:
+            $ref: '#/definitions/UserResponse'
+        404:
+          description: User not found
+  /recipes/{id}:
+    get:
+      tags:
+        - Recipe
+      summary: Get recipe by ID
+      description: Get a recipe by its ID with flavors
+      parameters:
+        - name: id
+          in: path
+          required: true
+          type: integer
+          format: int64
+      responses:
+        200:
+          description: Recipe details
+          schema:
+            $ref: '#/definitions/RecipeResponse'
+        404:
+          description: Recipe not found
+  /recipes:
+    get:
+      tags:
+        - Recipe
+      summary: Find recipes
+      description: Get all recipes with optional filters
+      parameters:
+        - name: limit
+          in: query
+          required: false
+          type: integer
+          default: 10
+        - name: offset
+          in: query
+          required: false
+          type: integer
+          default: 0
+        - name: sortBy
+          in: query
+          required: false
+          type: string
+          enum: [name, created_at]
+          default: created_at
+        - name: sortDirection
+          in: query
+          required: false
+          type: string
+          enum: [asc, desc]
+          default: desc
+      responses:
+        200:
+          description: List of recipes
+          schema:
+            type: array
+            items:
+              $ref: '#/definitions/RecipeResponse'
+definitions:
+  LoginRequest:
+    type: object
+    required:
+      - email
+      - password
+    properties:
+      email:
+        type: string
+        format: email
+      password:
+        type: string
+        format: password
+  RegisterRequest:
+    type: object
+    required:
+      - name
+      - email
+      - password
+    properties:
+      name:
+        type: string
+      email:
+        type: string
+        format: email
+      password:
+        type: string
+        format: password
+  LogoutRequest:
+    type: object
+    required:
+      - refreshToken
+    properties:
+      refreshToken:
+        type: string
+  AuthResponse:
+    type: object
+    properties:
+      accessToken:
+        type: string
+      refreshToken:
+        type: string
+      tokenType:
+        type: string
+        default: Bearer
+  RefreshTokenRequest:
+    type: object
+    required:
+      - refreshToken
+    properties:
+      refreshToken:
+        type: string
+  UserResponse:
+    type: object
+    properties:
+      id:
+        type: integer
+        format: int64
+      name:
+        type: string
+      email:
+        type: string
+        format: email
+      createdAt:
+        type: string
+        format: date-time
+      updatedAt:
+        type: string
+        format: date-time
+  RecipeResponse:
+    type: object
+    properties:
+      id:
+        type: integer
+        format: int64
+      name:
+        type: string
+      description:
+        type: string
+      ingredients:
+        type: string
+      instructions:
+        type: string
+      userId:
+        type: integer
+        format: int64
+      createdAt:
+        type: string
+        format: date-time
+      updatedAt:
+        type: string
+        format: date-time
+securityDefinitions:
+  BearerAuth:
+    type: apiKey
+    name: Authorization
+    in: header
