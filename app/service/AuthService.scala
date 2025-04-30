@@ -22,6 +22,23 @@ class AuthService @Inject() (
     Base64.getEncoder.encodeToString(hash)
   }
 
+  // Password policy validation
+  def validatePasswordPolicy(password: String): Either[String, String] = {
+    val hasLetters = password.exists(_.isLetter)
+    val hasDigits = password.exists(_.isDigit)
+    val hasSymbols = password.exists(c => !c.isLetterOrDigit)
+
+    val typesUsed = Seq(hasLetters, hasDigits, hasSymbols).count(_ == true)
+
+    if (typesUsed >= 3) {
+      Right(password)
+    } else {
+      Left(
+        "Password must contain at least 3 different types of characters (letters, numbers, and symbols)"
+      )
+    }
+  }
+
   // Authenticate a user by username/email and password
   def authenticate(username: String, password: String): Future[Option[User]] = {
     // First get the user
@@ -55,28 +72,35 @@ class AuthService @Inject() (
       existingEmail <- userRepository.findByEmail(email)
     } yield (existingUsername, existingEmail)
 
+    // Validate password policy
+    val passwordValidation = validatePasswordPolicy(password)
+
     checkExisting.flatMap {
       case (Some(_), _) => Future.successful(Left("Username already exists"))
       case (_, Some(_)) => Future.successful(Left("Email already exists"))
       case (None, None) =>
-        // Create new user
-        val newUser = User(
-          id = None,
-          username = username,
-          email = email,
-          createdAt = ZonedDateTime.now(),
-          updatedAt = ZonedDateTime.now()
-        )
+        passwordValidation match {
+          case Left(error) => Future.successful(Left(error))
+          case Right(_)    =>
+            // Create new user
+            val newUser = User(
+              id = None,
+              username = username,
+              email = email,
+              createdAt = ZonedDateTime.now(),
+              updatedAt = ZonedDateTime.now()
+            )
 
-        // Save user and then save password
-        userRepository.create(newUser).flatMap { user =>
-          val userPassword = UserPassword(
-            userId = user.id.get,
-            passwordHash = hashPassword(password),
-            createdAt = ZonedDateTime.now(),
-            updatedAt = ZonedDateTime.now()
-          )
-          userPasswordRepository.create(userPassword).map(_ => Right(user))
+            // Save user and then save password
+            userRepository.create(newUser).flatMap { user =>
+              val userPassword = UserPassword(
+                userId = user.id.get,
+                passwordHash = hashPassword(password),
+                createdAt = ZonedDateTime.now(),
+                updatedAt = ZonedDateTime.now()
+              )
+              userPasswordRepository.create(userPassword).map(_ => Right(user))
+            }
         }
     }
   }

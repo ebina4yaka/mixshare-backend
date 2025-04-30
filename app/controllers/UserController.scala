@@ -163,6 +163,18 @@ class UserController @Inject() (
       errors = errors :+ "Password cannot be empty"
     } else if (registration.password.length < 6) {
       errors = errors :+ "Password must be at least 6 characters long"
+    } else {
+      // Check character types
+      val hasLetters = registration.password.exists(_.isLetter)
+      val hasDigits = registration.password.exists(_.isDigit)
+      val hasSymbols = registration.password.exists(c => !c.isLetterOrDigit)
+
+      val typesUsed = Seq(hasLetters, hasDigits, hasSymbols).count(_ == true)
+
+      if (typesUsed < 3) {
+        errors =
+          errors :+ "Password must contain at least 3 different types of characters (letters, numbers, and symbols)"
+      }
     }
 
     errors

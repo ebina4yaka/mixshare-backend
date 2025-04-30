@@ -71,6 +71,41 @@ class AuthServiceSpec
       hash1 must not be hash3 // Different passwords should produce different hashes
     }
 
+    "validate password with all three character types (letters, numbers, and symbols)" in {
+      // When
+      val result = authService.validatePasswordPolicy("Pass1!@#")
+
+      // Then
+      result.isRight mustBe true
+    }
+
+    "reject password with only letters and numbers" in {
+      // When
+      val result = authService.validatePasswordPolicy("Password123")
+
+      // Then
+      result.isLeft mustBe true
+      result.swap.toOption.get mustBe "Password must contain at least 3 different types of characters (letters, numbers, and symbols)"
+    }
+
+    "reject password with only letters and symbols" in {
+      // When
+      val result = authService.validatePasswordPolicy("Password!@#")
+
+      // Then
+      result.isLeft mustBe true
+      result.swap.toOption.get mustBe "Password must contain at least 3 different types of characters (letters, numbers, and symbols)"
+    }
+
+    "reject password with only numbers and symbols" in {
+      // When
+      val result = authService.validatePasswordPolicy("123!@#")
+
+      // Then
+      result.isLeft mustBe true
+      result.swap.toOption.get mustBe "Password must contain at least 3 different types of characters (letters, numbers, and symbols)"
+    }
+
     "authenticate user with correct credentials" in {
       // Setup
       when(mockUserRepository.findByUsername("testuser"))
@@ -134,12 +169,15 @@ class AuthServiceSpec
       when(mockUserRepository.create(any[User]))
         .thenReturn(Future.successful(newUser))
 
+      // Valid password with letters, numbers, and symbols
+      val validPassword = "newP@ss123!"
+
       when(mockUserPasswordRepository.create(any[UserPassword]))
         .thenReturn(
           Future.successful(
             UserPassword(
               userId = 2L,
-              passwordHash = authService.hashPassword("newpassword"),
+              passwordHash = authService.hashPassword(validPassword),
               createdAt = ZonedDateTime.now(),
               updatedAt = ZonedDateTime.now()
             )
@@ -148,7 +186,7 @@ class AuthServiceSpec
 
       // When
       val resultFuture =
-        authService.register("newuser", "new@example.com", "newpassword")
+        authService.register("newuser", "new@example.com", validPassword)
       val result = Await.result(resultFuture, 5.seconds)
 
       // Then
@@ -169,7 +207,7 @@ class AuthServiceSpec
       verify(mockUserPasswordRepository).create(argThat {
         (userPassword: UserPassword) =>
           userPassword.userId == 2L &&
-          userPassword.passwordHash == authService.hashPassword("newpassword")
+          userPassword.passwordHash == authService.hashPassword(validPassword)
       })
     }
 
@@ -209,6 +247,27 @@ class AuthServiceSpec
       // Then
       result.isLeft mustBe true
       result.swap.toOption.get mustBe "Email already exists"
+
+      // Verify create was not called
+      verify(mockUserRepository, never()).create(any[User])
+      verify(mockUserPasswordRepository, never()).create(any[UserPassword])
+    }
+
+    "reject registration with invalid password (missing required character types)" in {
+      // Setup
+      when(mockUserRepository.findByUsername("newuser"))
+        .thenReturn(Future.successful(None))
+      when(mockUserRepository.findByEmail("new@example.com"))
+        .thenReturn(Future.successful(None))
+
+      // When
+      val resultFuture =
+        authService.register("newuser", "new@example.com", "password123")
+      val result = Await.result(resultFuture, 5.seconds)
+
+      // Then
+      result.isLeft mustBe true
+      result.swap.toOption.get mustBe "Password must contain at least 3 different types of characters (letters, numbers, and symbols)"
 
       // Verify create was not called
       verify(mockUserRepository, never()).create(any[User])
