@@ -2,13 +2,12 @@ package services
 
 import java.time.ZonedDateTime
 
-import scala.concurrent.Await
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
 import scala.concurrent.duration._
+import scala.concurrent.{Await, Future}
 
 import helpers.TestHelpers
-import models.{User, UserRepository}
+import models.{User, UserPassword, UserPasswordRepository, UserRepository}
 import org.mockito.ArgumentMatchers._
 import org.mockito.Mockito._
 import org.scalatest.BeforeAndAfterEach
@@ -29,22 +28,35 @@ class AuthServiceSpec
     with TestHelpers {
 
   val mockUserRepository: UserRepository = mock[UserRepository]
+  val mockUserPasswordRepository: UserPasswordRepository =
+    mock[UserPasswordRepository]
 
   // Create the service with mocked dependencies
-  val authService = new AuthService(mockUserRepository)
+  val authService =
+    new AuthService(mockUserRepository, mockUserPasswordRepository)
+
+  // Hash the password and store for later use
+  val passwordHash = authService.hashPassword("password123")
 
   // Test data
   val testUser = User(
     id = Some(1L),
     username = "testuser",
     email = "test@example.com",
-    passwordHash = authService.hashPassword("password123"),
+    createdAt = ZonedDateTime.now(),
+    updatedAt = ZonedDateTime.now()
+  )
+
+  val testUserPassword = UserPassword(
+    userId = 1L,
+    passwordHash = passwordHash,
     createdAt = ZonedDateTime.now(),
     updatedAt = ZonedDateTime.now()
   )
 
   override def beforeEach(): Unit = {
     reset(mockUserRepository)
+    reset(mockUserPasswordRepository)
   }
 
   "AuthService" should {
@@ -63,6 +75,8 @@ class AuthServiceSpec
       // Setup
       when(mockUserRepository.findByUsername("testuser"))
         .thenReturn(Future.successful(Some(testUser)))
+      when(mockUserPasswordRepository.findByUserId(1L))
+        .thenReturn(Future.successful(Some(testUserPassword)))
 
       // When
       val userFuture = authService.authenticate("testuser", "password123")
@@ -78,6 +92,8 @@ class AuthServiceSpec
       // Setup
       when(mockUserRepository.findByUsername("testuser"))
         .thenReturn(Future.successful(Some(testUser)))
+      when(mockUserPasswordRepository.findByUserId(1L))
+        .thenReturn(Future.successful(Some(testUserPassword)))
 
       // When
       val userFuture = authService.authenticate("testuser", "wrongpassword")
@@ -111,13 +127,24 @@ class AuthServiceSpec
         id = Some(2L),
         username = "newuser",
         email = "new@example.com",
-        passwordHash = authService.hashPassword("newpassword"),
         createdAt = ZonedDateTime.now(),
         updatedAt = ZonedDateTime.now()
       )
 
       when(mockUserRepository.create(any[User]))
         .thenReturn(Future.successful(newUser))
+
+      when(mockUserPasswordRepository.create(any[UserPassword]))
+        .thenReturn(
+          Future.successful(
+            UserPassword(
+              userId = 2L,
+              passwordHash = authService.hashPassword("newpassword"),
+              createdAt = ZonedDateTime.now(),
+              updatedAt = ZonedDateTime.now()
+            )
+          )
+        )
 
       // When
       val resultFuture =
@@ -133,9 +160,16 @@ class AuthServiceSpec
         .getOrElse(fail("Expected Right but got Left"))
         .email mustBe "new@example.com"
 
-      // Verify the password was hashed
+      // Verify the user was created
       verify(mockUserRepository).create(argThat { (user: User) =>
-        user.passwordHash == authService.hashPassword("newpassword")
+        user.username == "newuser" && user.email == "new@example.com"
+      })
+
+      // Verify the password was created
+      verify(mockUserPasswordRepository).create(argThat {
+        (userPassword: UserPassword) =>
+          userPassword.userId == 2L &&
+          userPassword.passwordHash == authService.hashPassword("newpassword")
       })
     }
 
@@ -157,6 +191,7 @@ class AuthServiceSpec
 
       // Verify create was not called
       verify(mockUserRepository, never()).create(any[User])
+      verify(mockUserPasswordRepository, never()).create(any[UserPassword])
     }
 
     "reject registration with existing email" in {
@@ -177,6 +212,7 @@ class AuthServiceSpec
 
       // Verify create was not called
       verify(mockUserRepository, never()).create(any[User])
+      verify(mockUserPasswordRepository, never()).create(any[UserPassword])
     }
   }
 }

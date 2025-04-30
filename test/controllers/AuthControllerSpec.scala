@@ -57,7 +57,7 @@ class AuthControllerSpec
       val loginRequest = LoginRequestTest("testuser", "password123")
       val now = ZonedDateTime.now()
       val user =
-        User(Some(1L), "testuser", "test@example.com", "hashedpass", now, now)
+        User(Some(1L), "testuser", "test@example.com", now, now)
 
       when(mockAuthService.authenticate(any[String], any[String]))
         .thenReturn(Future.successful(Some(user)))

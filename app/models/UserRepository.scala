@@ -13,7 +13,7 @@ import slick.jdbc.PostgresProfile.api._
 class UserRepository @Inject() (
     protected val dbConfigProvider: DatabaseConfigProvider
 )(implicit ec: ExecutionContext)
-    extends HasDatabaseConfigProvider[JdbcProfile] { // Import the ZonedDateTime column mapper
+    extends HasDatabaseConfigProvider[JdbcProfile] {
 
   // Users table definition
   class UsersTable(tag: Tag) extends Table[User](tag, "user") {
@@ -22,7 +22,6 @@ class UserRepository @Inject() (
     def id = column[Long]("id", O.PrimaryKey, O.AutoInc)
     def username = column[String]("username")
     def email = column[String]("email")
-    def passwordHash = column[String]("password_hash")
     def createdAt = column[ZonedDateTime]("created_at")
     def updatedAt = column[ZonedDateTime]("updated_at")
 
@@ -30,7 +29,6 @@ class UserRepository @Inject() (
       id.?,
       username,
       email,
-      passwordHash,
       createdAt,
       updatedAt
     ) <> ((User.apply _).tupled, User.unapply)

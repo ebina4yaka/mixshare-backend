@@ -195,7 +195,6 @@ class JwtService @Inject() (
               id = Some(id.toLong),
               username = "", // We don't need username for token generation
               email = "",
-              passwordHash = "",
               createdAt =
                 new Date().toInstant.atZone(java.time.ZoneId.systemDefault),
               updatedAt =

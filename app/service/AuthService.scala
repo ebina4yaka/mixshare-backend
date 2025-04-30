@@ -7,11 +7,12 @@ import javax.inject.{Inject, Singleton}
 
 import scala.concurrent.{ExecutionContext, Future}
 
-import models.{User, UserRepository}
+import models.{User, UserPassword, UserPasswordRepository, UserRepository}
 
 @Singleton
 class AuthService @Inject() (
-    userRepository: UserRepository
+    userRepository: UserRepository,
+    userPasswordRepository: UserPasswordRepository
 )(implicit ec: ExecutionContext) {
 
   // Simple password hashing function
@@ -23,16 +24,22 @@ class AuthService @Inject() (
 
   // Authenticate a user by username/email and password
   def authenticate(username: String, password: String): Future[Option[User]] = {
-    // Search for user by username
-    // In a real application, you might want to add email lookup too
-    val query = for {
-      users <- userRepository.findByUsername(username)
-    } yield users
-
-    query.map {
-      case Some(user) if user.passwordHash == hashPassword(password) =>
-        Some(user)
-      case _ => None
+    // First get the user
+    userRepository.findByUsername(username).flatMap {
+      case None       => Future.successful(None) // User not found
+      case Some(user) =>
+        // Then check the password
+        user.id match {
+          case None =>
+            Future.successful(None) // User ID not set, should not happen
+          case Some(userId) =>
+            userPasswordRepository.findByUserId(userId).map {
+              case Some(userPassword)
+                  if userPassword.passwordHash == hashPassword(password) =>
+                Some(user)
+              case _ => None
+            }
+        }
     }
   }
 
@@ -52,17 +59,25 @@ class AuthService @Inject() (
       case (Some(_), _) => Future.successful(Left("Username already exists"))
       case (_, Some(_)) => Future.successful(Left("Email already exists"))
       case (None, None) =>
-        // Create new user with hashed password
+        // Create new user
         val newUser = User(
           id = None,
           username = username,
           email = email,
-          passwordHash = hashPassword(password),
           createdAt = ZonedDateTime.now(),
           updatedAt = ZonedDateTime.now()
         )
 
-        userRepository.create(newUser).map(user => Right(user))
+        // Save user and then save password
+        userRepository.create(newUser).flatMap { user =>
+          val userPassword = UserPassword(
+            userId = user.id.get,
+            passwordHash = hashPassword(password),
+            createdAt = ZonedDateTime.now(),
+            updatedAt = ZonedDateTime.now()
+          )
+          userPasswordRepository.create(userPassword).map(_ => Right(user))
+        }
     }
   }
 }

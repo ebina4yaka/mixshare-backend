@@ -52,7 +52,7 @@ class UserControllerSpec
         RegistrationRequestTest("newuser", "user@example.com", "password123")
       val now = ZonedDateTime.now()
       val newUser =
-        User(Some(1L), "newuser", "user@example.com", "hashedpass", now, now)
+        User(Some(1L), "newuser", "user@example.com", now, now)
 
       when(mockAuthService.register(any[String], any[String], any[String]))
         .thenReturn(Future.successful(Right(newUser)))
@@ -124,7 +124,7 @@ class UserControllerSpec
     "return 200 with user data when user exists" in {
       val now = ZonedDateTime.now()
       val user =
-        User(Some(1L), "testuser", "test@example.com", "hashedpass", now, now)
+        User(Some(1L), "testuser", "test@example.com", now, now)
 
       when(mockUserRepository.getById(any[Long]))
         .thenReturn(Future.successful(Some(user)))

@@ -3,10 +3,9 @@ package services
 import java.time.ZonedDateTime
 import java.util.Date
 
-import scala.concurrent.Await
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
 import scala.concurrent.duration._
+import scala.concurrent.{Await, Future}
 
 import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
@@ -55,7 +54,6 @@ class JwtServiceSpec
     id = Some(1L),
     username = "testuser",
     email = "test@example.com",
-    passwordHash = "hashed-password",
     createdAt = ZonedDateTime.now(),
     updatedAt = ZonedDateTime.now()
   )
