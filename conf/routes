@@ -19,10 +19,6 @@ GET        /api/recipes/:id        controllers.RecipeController.getRecipe(id: Lo
 # Recipe endpoint - Get all recipes with optional filters
 GET        /api/recipes            controllers.RecipeController.findRecipes(params: models.FindRecipesParams)
 
-# Swagger Documentation
-GET        /api-docs               controllers.SwaggerController.index
-GET        /api-docs/swagger.json  controllers.SwaggerController.spec
-GET        /api-docs/swagger-ui/*file controllers.SwaggerController.swaggerResources(file)
 
 # Map static resources from the /public folder to the /assets URL path
 GET        /assets/*file           controllers.Assets.versioned(path="/public", file)

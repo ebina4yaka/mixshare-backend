@@ -1,12 +1,11 @@
 import javax.inject.{Inject, Singleton}
 
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.Future
 
 import com.google.inject.AbstractModule
 import play.api.inject.ApplicationLifecycle
 import play.api.{Configuration, Environment, Logger}
 import service.RedisService
-import util.{SwaggerGenerator, SwaggerModule}
 
 /** This class is a Guice module that tells Guice how to bind several different
   * types. This Guice module is created when the Play application starts.
@@ -16,9 +15,6 @@ class Module(environment: Environment, configuration: Configuration)
   override def configure(): Unit = {
     // Bind application lifecycle hook for Redis service
     bind(classOf[RedisLifecycleHook]).asEagerSingleton()
-
-    // Install Swagger module
-    install(new SwaggerModule())
   }
 }
 
