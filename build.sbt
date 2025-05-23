@@ -24,7 +24,7 @@ lazy val root = (project in file("."))
       "org.mockito" % "mockito-core" % "5.17.0" % Test,
       "org.webjars" % "swagger-ui" % "5.21.0",
       "io.swagger.core.v3" % "swagger-core-jakarta" % "2.2.30",
-      "io.swagger.parser.v3" % "swagger-parser" % "2.1.27",
+      "io.swagger.parser.v3" % "swagger-parser" % "2.1.28",
       "com.fasterxml.jackson.core" % "jackson-databind" % "2.19.0" force (),
       "com.fasterxml.jackson.module" %% "jackson-module-scala" % "2.19.0" force ()
     ),
