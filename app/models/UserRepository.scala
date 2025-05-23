@@ -31,7 +31,7 @@ class UserRepository @Inject() (
       email,
       createdAt,
       updatedAt
-    ) <> ((User.apply _).tupled, User.unapply)
+    ) <> (User.apply.tupled, User.unapply)
   }
 
   val users = TableQuery[UsersTable]

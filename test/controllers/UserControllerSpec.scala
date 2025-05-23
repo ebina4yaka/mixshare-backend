@@ -58,7 +58,7 @@ class UserControllerSpec
       val request = FakeRequest(POST, "/api/auth/register")
         .withHeaders("Csrf-Token" -> "nocheck")
         .withJsonBody(
-          Json.toJson(registerRequest)(
+          Json.toJson(registerRequest)(using
             models.ModelFormatters.registrationRequestFormat
           )
         )
@@ -82,7 +82,7 @@ class UserControllerSpec
       val request = FakeRequest(POST, "/api/auth/register")
         .withHeaders("Csrf-Token" -> "nocheck")
         .withJsonBody(
-          Json.toJson(registerRequest)(
+          Json.toJson(registerRequest)(using
             models.ModelFormatters.registrationRequestFormat
           )
         )
@@ -106,7 +106,7 @@ class UserControllerSpec
       val request = FakeRequest(POST, "/api/auth/register")
         .withHeaders("Csrf-Token" -> "nocheck")
         .withJsonBody(
-          Json.toJson(registerRequest)(
+          Json.toJson(registerRequest)(using
             models.ModelFormatters.registrationRequestFormat
           )
         )

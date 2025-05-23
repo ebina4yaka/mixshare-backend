@@ -1,6 +1,6 @@
 ThisBuild / version := "0.1.0-SNAPSHOT"
 
-ThisBuild / scalaVersion := "3.3.6"
+ThisBuild / scalaVersion := "3.7.0"
 
 ThisBuild / semanticdbEnabled := true
 ThisBuild / semanticdbVersion := scalafixSemanticdb.revision
@@ -26,7 +26,7 @@ lazy val root = (project in file("."))
       "org.mockito" % "mockito-core" % "5.18.0" % Test
     ),
     // Add routing settings for Scala 3
-    scalacOptions ++= Seq("-Xignore-scala2-macros", "-source:3.3"),
+    scalacOptions ++= Seq("-Xignore-scala2-macros", "-source:3.7"),
     // Ensure routes file is properly handled
     routesImport += "controllers._",
     // Add this to correctly configure assets

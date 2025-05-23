@@ -63,21 +63,21 @@ object FindRecipesParams {
                 Some(lastSeen)
               )
             )
-          case (Some(Right(keyword)), _, _, _) =>
-            Right(FindRecipesParams(Some(keyword), None))
           case (
                 Some(Right(keyword)),
                 Some(Right(userId)),
-                _,
+                None,
                 Some(Right(pageSize))
               ) =>
             Right(
               FindRecipesParams(Some(keyword), Some(userId), pageSize, None)
             )
-          case (Some(Right(keyword)), _, Some(Right(lastSeen)), _) =>
+          case (Some(Right(keyword)), None, Some(Right(lastSeen)), _) =>
             Right(FindRecipesParams(Some(keyword), None, 10, Some(lastSeen)))
-          case (Some(Right(keyword)), _, _, Some(Right(pageSize))) =>
+          case (Some(Right(keyword)), None, None, Some(Right(pageSize))) =>
             Right(FindRecipesParams(Some(keyword), None, pageSize, None))
+          case (Some(Right(keyword)), _, _, _) =>
+            Right(FindRecipesParams(Some(keyword), None))
           case (_, Some(Right(userId)), Some(Right(lastSeen)), _) =>
             Right(FindRecipesParams(None, Some(userId), 10, Some(lastSeen)))
           case (_, Some(Right(userId)), _, Some(Right(pageSize))) =>

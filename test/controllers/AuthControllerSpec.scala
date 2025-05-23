@@ -62,7 +62,9 @@ class AuthControllerSpec
       val request = FakeRequest(POST, "/api/auth/login")
         .withHeaders("Csrf-Token" -> "nocheck")
         .withJsonBody(
-          Json.toJson(loginRequest)(models.ModelFormatters.loginRequestFormat)
+          Json.toJson(loginRequest)(using
+            models.ModelFormatters.loginRequestFormat
+          )
         )
 
       val result = route(app, request).get
@@ -83,7 +85,9 @@ class AuthControllerSpec
       val request = FakeRequest(POST, "/api/auth/login")
         .withHeaders("Csrf-Token" -> "nocheck")
         .withJsonBody(
-          Json.toJson(loginRequest)(models.ModelFormatters.loginRequestFormat)
+          Json.toJson(loginRequest)(using
+            models.ModelFormatters.loginRequestFormat
+          )
         )
 
       val result = route(app, request).get
@@ -105,7 +109,7 @@ class AuthControllerSpec
       val request = FakeRequest(POST, "/api/auth/refresh")
         .withHeaders("Csrf-Token" -> "nocheck")
         .withJsonBody(
-          Json.toJson(refreshRequest)(
+          Json.toJson(refreshRequest)(using
             models.ModelFormatters.refreshTokenRequestFormat
           )
         )
@@ -128,7 +132,7 @@ class AuthControllerSpec
       val request = FakeRequest(POST, "/api/auth/refresh")
         .withHeaders("Csrf-Token" -> "nocheck")
         .withJsonBody(
-          Json.toJson(refreshRequest)(
+          Json.toJson(refreshRequest)(using
             models.ModelFormatters.refreshTokenRequestFormat
           )
         )

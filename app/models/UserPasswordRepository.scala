@@ -30,7 +30,7 @@ class UserPasswordRepository @Inject() (
       passwordHash,
       createdAt,
       updatedAt
-    ) <> ((UserPassword.apply _).tupled, UserPassword.unapply)
+    ) <> (UserPassword.apply.tupled, UserPassword.unapply)
   }
 
   val userPasswords = TableQuery[UserPasswordsTable]

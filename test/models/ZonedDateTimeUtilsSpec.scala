@@ -28,7 +28,7 @@ class ZonedDateTimeUtilsSpec extends PlaySpec with TestHelpers {
       // Convert back from JSON
       val parsed = json.validate[ZonedDateTime]
 
-      parsed mustBe a[JsSuccess[_]]
+      parsed mustBe a[JsSuccess[?]]
 
       val result = parsed.get
 
@@ -54,14 +54,14 @@ class ZonedDateTimeUtilsSpec extends PlaySpec with TestHelpers {
       // Test standard ISO format
       val json1 = Json.parse(""""2025-04-30T12:34:56.000000+09:00"""")
       val result1 = json1.validate[ZonedDateTime]
-      result1 mustBe a[JsSuccess[_]]
+      result1 mustBe a[JsSuccess[?]]
       result1.get.getYear mustBe 2025
 
       // Test format with zone ID
       val json2 =
         Json.parse(""""2025-04-30T12:34:56.000000+09:00[Asia/Tokyo]"""")
       val result2 = json2.validate[ZonedDateTime]
-      result2 mustBe a[JsSuccess[_]]
+      result2 mustBe a[JsSuccess[?]]
       result2.get.getYear mustBe 2025
       // The important part is the offset is preserved, not the exact zone representation
       result2.get.getOffset.getTotalSeconds mustBe ZoneOffset
@@ -71,7 +71,7 @@ class ZonedDateTimeUtilsSpec extends PlaySpec with TestHelpers {
       // Test ISO format (skip PostgreSQL-style format since it seems not to be supported in the test environment)
       val json3 = Json.parse(""""2025-04-30T12:34:56.000000+09:00"""")
       val result3 = json3.validate[ZonedDateTime]
-      result3 mustBe a[JsSuccess[_]]
+      result3 mustBe a[JsSuccess[?]]
       result3.get.getYear mustBe 2025
       result3.get.getOffset mustBe ZoneOffset.ofHours(9)
     }
