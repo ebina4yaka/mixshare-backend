@@ -2,11 +2,9 @@ package controllers
 
 import java.time.ZonedDateTime
 
-import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
-import actions.AuthAction
-import helpers.{TestHelpers, TestWithDBCleaner}
+import helpers.TestWithDBCleaner
 import models.{RegistrationRequestTest, User, UserRepository}
 import org.mockito.ArgumentMatchers._
 import org.mockito.Mockito._
