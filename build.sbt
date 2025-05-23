@@ -21,7 +21,7 @@ lazy val root = (project in file("."))
       "com.auth0" % "java-jwt" % "4.5.0",
       "redis.clients" % "jedis" % "6.0.0",
       "com.h2database" % "h2" % "2.3.232" % Test,
-      "org.mockito" % "mockito-core" % "5.17.0" % Test
+      "org.mockito" % "mockito-core" % "5.18.0" % Test
     ),
     // Add routing settings for Scala 3
     scalacOptions ++= Seq("-Xignore-scala2-macros", "-source:3.3"),
