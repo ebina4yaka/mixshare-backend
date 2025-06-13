@@ -15,7 +15,7 @@ lazy val root = (project in file("."))
       guice,
       evolutions,
       filters,
-      "org.postgresql" % "postgresql" % "42.7.5",
+      "org.postgresql" % "postgresql" % "42.7.7",
       "org.playframework" %% "play-slick" % "6.2.0",
       "org.playframework" %% "play-slick-evolutions" % "6.2.0",
       "org.scalatestplus.play" %% "scalatestplus-play" % "7.0.1" % Test,
@@ -31,7 +31,6 @@ lazy val root = (project in file("."))
     routesImport += "controllers._",
     // Add this to correctly configure assets
     PlayKeys.playDefaultPort := 9000,
-
     dependencyOverrides ++= Seq(
       "com.fasterxml.jackson.core" % "jackson-databind" % jacksonVersion,
       "com.fasterxml.jackson.core" % "jackson-core" % jacksonVersion,
