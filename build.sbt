@@ -5,7 +5,7 @@ ThisBuild / scalaVersion := "3.7.0"
 ThisBuild / semanticdbEnabled := true
 ThisBuild / semanticdbVersion := scalafixSemanticdb.revision
 
-val jacksonVersion = "2.19.0"
+val jacksonVersion = "2.19.1"
 
 lazy val root = (project in file("."))
   .enablePlugins(PlayScala)
@@ -31,7 +31,6 @@ lazy val root = (project in file("."))
     routesImport += "controllers._",
     // Add this to correctly configure assets
     PlayKeys.playDefaultPort := 9000,
-
     dependencyOverrides ++= Seq(
       "com.fasterxml.jackson.core" % "jackson-databind" % jacksonVersion,
       "com.fasterxml.jackson.core" % "jackson-core" % jacksonVersion,
