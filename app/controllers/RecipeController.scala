@@ -60,7 +60,7 @@ class RecipeController @Inject() (
   }
 
   def findRecipes(): Action[AnyContent] = Action.async { implicit request =>
-    val keyword = request.getQueryString("name")
+    val keyword = request.getQueryString("keyword")
     val userId = request.getQueryString("userId")
     val pageSize = request.getQueryString("pageSize")
     val lastSeen = request.getQueryString("lastSeen")
