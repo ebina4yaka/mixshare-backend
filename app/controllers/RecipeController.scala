@@ -34,10 +34,6 @@ class RecipeController @Inject() (
       id = recipe.id,
       name = recipe.name,
       description = recipe.description,
-      ingredients = "Placeholder ingredients", // TODO: Fix model mismatch
-      instructions = "Placeholder instructions", // TODO: Fix model mismatch
-      cookingTime = None, // TODO: Fix model mismatch
-      servings = None, // TODO: Fix model mismatch
       createdAt = recipe.createdAt,
       updatedAt = recipe.updatedAt,
       flavors = recipe.flavors.map(f =>
@@ -45,9 +41,7 @@ class RecipeController @Inject() (
           id = f.id,
           recipeId = f.recipeId,
           name = f.name,
-          description = None, // TODO: Fix model mismatch
-          createdAt = recipe.createdAt, // TODO: Fix model mismatch
-          updatedAt = recipe.updatedAt // TODO: Fix model mismatch
+          quantity = f.quantity
         )
       )
     )

@@ -64,24 +64,17 @@ object ApiTypes {
       updatedAt: ZonedDateTime
   )
 
-  // レシピ関連の型定義
   case class Flavor(
       id: Option[Long],
       recipeId: Long,
       name: String,
-      description: Option[String],
-      createdAt: ZonedDateTime,
-      updatedAt: ZonedDateTime
+      quantity: Long
   )
 
   case class Recipe(
       id: Option[Long],
       name: String,
       description: Option[String],
-      ingredients: String,
-      instructions: String,
-      cookingTime: Option[Int],
-      servings: Option[Int],
       createdAt: ZonedDateTime,
       updatedAt: ZonedDateTime,
       flavors: Seq[Flavor] = Seq.empty
