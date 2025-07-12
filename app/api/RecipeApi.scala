@@ -23,19 +23,17 @@ object RecipeApi {
 
   // Find recipes endpoint with query parameters
   val findRecipesEndpoint = baseEndpoint.get
-    .in(query[Option[String]]("name").description("Filter by recipe name"))
     .in(
-      query[Option[String]]("flavorName").description("Filter by flavor name")
+      query[Option[String]]("keyword").description("Filter by search keyword")
     )
     .in(
-      query[Option[Int]]("maxCookingTime").description(
-        "Maximum cooking time in minutes"
-      )
+      query[Option[Long]]("userId").description("Filter by user id")
     )
     .in(
-      query[Option[Int]]("minServings").description(
-        "Minimum number of servings"
-      )
+      query[Option[Int]]("pageSize").description("page size")
+    )
+    .in(
+      query[Option[Long]]("lastSeen").description("last seen")
     )
     .out(statusCode(StatusCode.Ok) and jsonBody[Seq[Recipe]])
     .name("findRecipes")

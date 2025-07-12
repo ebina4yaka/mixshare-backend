@@ -60,17 +60,21 @@ class RecipeController @Inject() (
   }
 
   def findRecipes(): Action[AnyContent] = Action.async { implicit request =>
-    val name = request.getQueryString("name")
-    val flavorName = request.getQueryString("flavorName")
-    val maxCookingTime = request.getQueryString("maxCookingTime").map(_.toInt)
-    val minServings = request.getQueryString("minServings").map(_.toInt)
+    val keyword = request.getQueryString("name")
+    val userId = request.getQueryString("userId")
+    val pageSize = request.getQueryString("pageSize")
+    val lastSeen = request.getQueryString("lastSeen")
 
     val params = ModelsFindRecipesParams(
-      keyword = name,
-      userId = None,
-      pageSize = 10,
-      lastSeen = None
+      keyword = keyword,
+      userId = userId match
+        case Some(userId) => Some(userId.toLong),
+      pageSize = pageSize match
+        case Some(pageSize) => pageSize.toInt,
+      lastSeen = lastSeen match
+        case Some(lastSeen) => Some(lastSeen.toLong)
     )
+
     recipeService.findRecipes(params).map { recipes =>
       Ok(Json.toJson(recipes.map(toApiRecipe)))
     }
