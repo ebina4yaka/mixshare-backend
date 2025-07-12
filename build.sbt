@@ -18,7 +18,7 @@ lazy val root = (project in file("."))
       "org.postgresql" % "postgresql" % "42.7.5",
       "org.playframework" %% "play-slick" % "6.2.0",
       "org.playframework" %% "play-slick-evolutions" % "6.2.0",
-      "org.scalatestplus.play" %% "scalatestplus-play" % "7.0.1" % Test,
+      "org.scalatestplus.play" %% "scalatestplus-play" % "7.0.2" % Test,
       "org.typelevel" %% "cats-core" % "2.13.0",
       "com.auth0" % "java-jwt" % "4.5.0",
       "redis.clients" % "jedis" % "6.0.0",
