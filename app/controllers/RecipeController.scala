@@ -5,10 +5,18 @@ import javax.inject._
 
 import scala.concurrent.ExecutionContext
 
-import models._
+import api.{ApiTypes, RecipeApi}
+import models.{
+  FindRecipesParams => ModelsFindRecipesParams,
+  Recipe => ModelsRecipe,
+  _
+}
 import play.api.libs.json._
 import play.api.mvc._
 import service.RecipeService
+import sttp.model.StatusCode
+import sttp.tapir._
+import sttp.tapir.json.play._
 
 @Singleton
 class RecipeController @Inject() (
@@ -18,30 +26,59 @@ class RecipeController @Inject() (
 )(implicit ec: ExecutionContext)
     extends BaseController {
 
-  // JSON format for Flavor
-  implicit val flavorFormat: OFormat[Flavor] = Json.format[Flavor]
+  import ApiTypes._
 
-  // JSON format for Recipe
-  implicit val recipeFormat: OFormat[Recipe] = Json.format[Recipe]
-
-  // JSON format for FindRecipesParams
-  implicit val findRecipesParamsFormat: OFormat[FindRecipesParams] =
-    Json.format[FindRecipesParams]
+  // Temporary workaround - convert models.Recipe to ApiTypes.Recipe
+  private def toApiRecipe(recipe: ModelsRecipe): ApiTypes.Recipe = {
+    ApiTypes.Recipe(
+      id = recipe.id,
+      name = recipe.name,
+      description = recipe.description,
+      ingredients = "Placeholder ingredients", // TODO: Fix model mismatch
+      instructions = "Placeholder instructions", // TODO: Fix model mismatch
+      cookingTime = None, // TODO: Fix model mismatch
+      servings = None, // TODO: Fix model mismatch
+      createdAt = recipe.createdAt,
+      updatedAt = recipe.updatedAt,
+      flavors = recipe.flavors.map(f =>
+        ApiTypes.Flavor(
+          id = f.id,
+          recipeId = f.recipeId,
+          name = f.name,
+          description = None, // TODO: Fix model mismatch
+          createdAt = recipe.createdAt, // TODO: Fix model mismatch
+          updatedAt = recipe.updatedAt // TODO: Fix model mismatch
+        )
+      )
+    )
+  }
 
   // GET endpoint to retrieve a recipe by ID with its flavors
   def getRecipe(id: Long): Action[AnyContent] = Action.async {
     implicit request =>
       recipeService.getRecipeById(id).map {
-        case Some(recipe) => Ok(Json.toJson(recipe))
+        case Some(recipe) => Ok(Json.toJson(toApiRecipe(recipe)))
         case None =>
-          NotFound(Json.obj("message" -> s"Recipe with id $id not found"))
+          NotFound(
+            Json.toJson(NotFoundResponse(s"Recipe with id $id not found"))
+          )
       }
   }
 
-  def findRecipes(params: FindRecipesParams): Action[AnyContent] =
-    Action.async { implicit request =>
-      recipeService.findRecipes(params).map { recipes =>
-        Ok(Json.toJson(recipes))
-      }
+  def findRecipes(): Action[AnyContent] = Action.async { implicit request =>
+    val name = request.getQueryString("name")
+    val flavorName = request.getQueryString("flavorName")
+    val maxCookingTime = request.getQueryString("maxCookingTime").map(_.toInt)
+    val minServings = request.getQueryString("minServings").map(_.toInt)
+
+    val params = ModelsFindRecipesParams(
+      keyword = name,
+      userId = None,
+      pageSize = 10,
+      lastSeen = None
+    )
+    recipeService.findRecipes(params).map { recipes =>
+      Ok(Json.toJson(recipes.map(toApiRecipe)))
     }
+  }
 }

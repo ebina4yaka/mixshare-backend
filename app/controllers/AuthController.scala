@@ -5,10 +5,14 @@ import javax.inject._
 import scala.concurrent.{ExecutionContext, Future}
 
 import actions.AuthAction
+import api.{ApiTypes, AuthApi}
 import models.User
 import play.api.libs.json._
 import play.api.mvc._
 import service.{AuthService, JwtService}
+import sttp.model.StatusCode
+import sttp.tapir._
+import sttp.tapir.json.play._
 
 @Singleton
 class AuthController @Inject() (
@@ -19,246 +23,231 @@ class AuthController @Inject() (
 )(implicit ec: ExecutionContext)
     extends BaseController {
 
-  // Login request model
-  case class LoginRequest(username: String, password: String)
-
-  // Login response model with refresh token
-  case class LoginResponse(
-      success: Boolean,
-      message: String,
-      accessToken: Option[String] = None,
-      refreshToken: Option[String] = None,
-      userId: Option[Long] = None
-  )
-
-  // JSON formatters
-  implicit val loginRequestFormat: Format[LoginRequest] =
-    Json.format[LoginRequest]
-  implicit val loginResponseFormat: Format[LoginResponse] =
-    Json.format[LoginResponse]
+  import ApiTypes._
 
   // POST endpoint for authentication
-  def login(): Action[JsValue] = Action.async(parse.json) { implicit request =>
-    val loginResult = request.body.validate[LoginRequest]
-
-    loginResult.fold(
-      errors => {
-        Future.successful(
-          BadRequest(
-            Json.obj(
-              "success" -> false,
-              "message" -> "Invalid request format"
-            )
-          )
-        )
-      },
-      login => {
-        authService.authenticate(login.username, login.password).flatMap {
-          case Some(user) =>
-            // Generate access and refresh tokens
-            val accessToken = jwtService.createAccessToken(user)
-            jwtService.createRefreshToken(user).map { refreshToken =>
-              Ok(
-                Json.toJson(
-                  LoginResponse(
-                    success = true,
-                    message = "Authentication successful",
-                    accessToken = Some(accessToken),
-                    refreshToken = Some(refreshToken),
-                    userId = user.id
+  def login(): Action[AnyContent] = Action.async { implicit request =>
+    request.body.asJson match {
+      case Some(json) =>
+        json.validate[LoginRequest] match {
+          case JsSuccess(loginRequest, _) =>
+            authService
+              .authenticate(loginRequest.username, loginRequest.password)
+              .flatMap {
+                case Some(user) =>
+                  // Generate access and refresh tokens
+                  val accessToken = jwtService.createAccessToken(user)
+                  jwtService.createRefreshToken(user).map { refreshToken =>
+                    Ok(
+                      Json.toJson(
+                        LoginResponse(
+                          success = true,
+                          message = "Authentication successful",
+                          accessToken = Some(accessToken),
+                          refreshToken = Some(refreshToken),
+                          userId = user.id
+                        )
+                      )
+                    )
+                  }
+                case None =>
+                  Future.successful(
+                    Unauthorized(
+                      Json.toJson(
+                        LoginResponse(
+                          success = false,
+                          message = "Invalid username or password"
+                        )
+                      )
+                    )
                   )
-                )
-              )
-            }
-          case None =>
+              }
+          case JsError(errors) =>
             Future.successful(
-              Unauthorized(
+              BadRequest(
                 Json.toJson(
                   LoginResponse(
                     success = false,
-                    message = "Invalid username or password"
+                    message =
+                      s"Invalid request format: ${errors.mkString(", ")}"
                   )
                 )
               )
             )
         }
-      }
-    )
-  }
-
-  // Verify token endpoint
-  def verifyToken(): Action[AnyContent] = Action.async { request =>
-    request.headers.get("Authorization") match {
-      case Some(authHeader) if authHeader.startsWith("Bearer ") =>
-        val token = authHeader.substring(7) // Remove "Bearer " prefix
-        jwtService.verifyToken(token).map {
-          case Some(claim) =>
-            Ok(
-              Json.obj(
-                "valid" -> true,
-                "userId" -> claim.subject,
-                "username" -> claim.username
-              )
-            )
-          case None =>
-            Unauthorized(
-              Json.obj(
-                "valid" -> false,
-                "message" -> "Invalid or expired token"
-              )
-            )
-        }
-      case _ =>
+      case None =>
         Future.successful(
           BadRequest(
-            Json.obj(
-              "valid" -> false,
-              "message" -> "Missing or invalid Authorization header"
+            Json.toJson(
+              LoginResponse(
+                success = false,
+                message = "Request body must be JSON"
+              )
             )
           )
         )
     }
   }
 
-  // Logout response model
-  case class LogoutResponse(
-      success: Boolean,
-      message: String
-  )
-
-  // JSON formatter for logout response
-  implicit val logoutResponseFormat: Format[LogoutResponse] =
-    Json.format[LogoutResponse]
-
-  // Refresh token request model
-  case class RefreshTokenRequest(refreshToken: String)
-
-  // Response for token refresh
-  case class TokenRefreshResponse(
-      success: Boolean,
-      message: String,
-      accessToken: Option[String] = None,
-      refreshToken: Option[String] = None
-  )
-
-  // JSON formatters for refresh token
-  implicit val refreshTokenRequestFormat: Format[RefreshTokenRequest] =
-    Json.format[RefreshTokenRequest]
-  implicit val tokenRefreshResponseFormat: Format[TokenRefreshResponse] =
-    Json.format[TokenRefreshResponse]
-
-  // POST endpoint to refresh access token using a refresh token
-  def refreshToken(): Action[JsValue] = Action.async(parse.json) {
-    implicit request =>
-      val refreshResult = request.body.validate[RefreshTokenRequest]
-
-      refreshResult.fold(
-        errors => {
-          Future.successful(
-            BadRequest(
-              Json.obj(
-                "success" -> false,
-                "message" -> "Invalid request format"
+  // Verify token endpoint
+  def verifyToken(): Action[AnyContent] = Action.async { implicit request =>
+    request.headers.get("Authorization") match {
+      case Some(authHeader) if authHeader.startsWith("Bearer ") =>
+        val token = authHeader.substring(7)
+        jwtService.verifyToken(token).map {
+          case Some(claim) =>
+            Ok(
+              Json.toJson(
+                TokenVerificationResponse(
+                  valid = true,
+                  userId = Some(claim.subject),
+                  username = Some(claim.username)
+                )
               )
             )
-          )
-        },
-        refresh => {
-          jwtService.refreshTokens(refresh.refreshToken).map {
-            case Some(tokenPair) =>
-              Ok(
-                Json.toJson(
-                  TokenRefreshResponse(
-                    success = true,
-                    message = "Tokens refreshed successfully",
-                    accessToken = Some(tokenPair.accessToken),
-                    refreshToken = Some(tokenPair.refreshToken)
-                  )
+          case None =>
+            Unauthorized(
+              Json.toJson(
+                TokenVerificationResponse(
+                  valid = false,
+                  message = Some("Invalid or expired token")
                 )
               )
-            case None =>
-              Unauthorized(
-                Json.toJson(
-                  TokenRefreshResponse(
-                    success = false,
-                    message = "Invalid or expired refresh token"
-                  )
-                )
-              )
-          }
+            )
         }
-      )
-  }
-
-  // Logout request model
-  case class LogoutRequest(refreshToken: String)
-
-  // JSON formatter for logout request
-  implicit val logoutRequestFormat: Format[LogoutRequest] =
-    Json.format[LogoutRequest]
-
-  // POST endpoint for logout - invalidates both access and refresh tokens
-  def logout(): Action[JsValue] = Action.async(parse.json) { implicit request =>
-    // Validate request body
-    val logoutResult = request.body.validate[LogoutRequest]
-
-    logoutResult.fold(
-      errors => {
+      case _ =>
         Future.successful(
           BadRequest(
-            Json.obj(
-              "success" -> false,
-              "message" -> "Invalid request format: refreshToken is required"
+            Json.toJson(
+              TokenVerificationResponse(
+                valid = false,
+                message =
+                  Some("Authorization header with Bearer token required")
+              )
             )
           )
         )
-      },
-      logout => {
-        // Get access token from header
-        val accessTokenOpt =
-          request.headers.get("Authorization").map { authHeader =>
-            if (authHeader.startsWith("Bearer ")) {
-              authHeader.substring(7) // Remove "Bearer " prefix
-            } else {
-              authHeader
+    }
+  }
+
+  // POST endpoint to refresh access token using a refresh token
+  def refreshToken(): Action[AnyContent] = Action.async { implicit request =>
+    request.body.asJson match {
+      case Some(json) =>
+        json.validate[RefreshTokenRequest] match {
+          case JsSuccess(refreshRequest, _) =>
+            jwtService.refreshTokens(refreshRequest.refreshToken).map {
+              case Some(tokenPair) =>
+                Ok(
+                  Json.toJson(
+                    TokenRefreshResponse(
+                      success = true,
+                      message = "Tokens refreshed successfully",
+                      accessToken = Some(tokenPair.accessToken),
+                      refreshToken = Some(tokenPair.refreshToken)
+                    )
+                  )
+                )
+              case None =>
+                Unauthorized(
+                  Json.toJson(
+                    TokenRefreshResponse(
+                      success = false,
+                      message = "Invalid or expired refresh token"
+                    )
+                  )
+                )
             }
-          }
-
-        // Process both tokens
-        val accessTokenFuture = accessTokenOpt match {
-          case Some(token) => jwtService.invalidateAccessToken(token)
-          case None => Future.successful(false) // No access token to invalidate
-        }
-
-        val refreshTokenFuture =
-          jwtService.invalidateRefreshToken(logout.refreshToken)
-
-        // Wait for both operations to complete
-        for {
-          accessResult <- accessTokenFuture
-          refreshResult <- refreshTokenFuture
-        } yield {
-          if (accessResult && refreshResult) {
-            Ok(
-              Json.toJson(
-                LogoutResponse(
-                  success = true,
-                  message = "Successfully logged out"
+          case JsError(errors) =>
+            Future.successful(
+              BadRequest(
+                Json.toJson(
+                  TokenRefreshResponse(
+                    success = false,
+                    message =
+                      s"Invalid request format: ${errors.mkString(", ")}"
+                  )
                 )
               )
             )
-          } else {
-            InternalServerError(
-              Json.toJson(
-                LogoutResponse(
-                  success = false,
-                  message = "Failed to invalidate one or more tokens"
+        }
+      case None =>
+        Future.successful(
+          BadRequest(
+            Json.toJson(
+              TokenRefreshResponse(
+                success = false,
+                message = "Request body must be JSON"
+              )
+            )
+          )
+        )
+    }
+  }
+
+  // POST endpoint for logout - invalidates both access and refresh tokens
+  def logout(): Action[AnyContent] = Action.async { implicit request =>
+    (request.body.asJson, request.headers.get("Authorization")) match {
+      case (Some(json), Some(authHeader)) if authHeader.startsWith("Bearer ") =>
+        val accessToken = authHeader.substring(7)
+        json.validate[LogoutRequest] match {
+          case JsSuccess(logoutRequest, _) =>
+            // Process both tokens
+            val accessTokenFuture =
+              jwtService.invalidateAccessToken(accessToken)
+            val refreshTokenFuture =
+              jwtService.invalidateRefreshToken(logoutRequest.refreshToken)
+
+            // Wait for both operations to complete
+            for {
+              accessResult <- accessTokenFuture
+              refreshResult <- refreshTokenFuture
+            } yield {
+              if (accessResult && refreshResult) {
+                Ok(
+                  Json.toJson(
+                    LogoutResponse(
+                      success = true,
+                      message = "Successfully logged out"
+                    )
+                  )
+                )
+              } else {
+                InternalServerError(
+                  Json.toJson(
+                    LogoutResponse(
+                      success = false,
+                      message = "Failed to invalidate one or more tokens"
+                    )
+                  )
+                )
+              }
+            }
+          case JsError(errors) =>
+            Future.successful(
+              BadRequest(
+                Json.toJson(
+                  LogoutResponse(
+                    success = false,
+                    message =
+                      s"Invalid request format: ${errors.mkString(", ")}"
+                  )
                 )
               )
             )
-          }
         }
-      }
-    )
+      case _ =>
+        Future.successful(
+          BadRequest(
+            Json.toJson(
+              LogoutResponse(
+                success = false,
+                message =
+                  "Request body (JSON) and Authorization header with Bearer token required"
+              )
+            )
+          )
+        )
+    }
   }
 }

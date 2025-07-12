@@ -6,6 +6,7 @@ ThisBuild / semanticdbEnabled := true
 ThisBuild / semanticdbVersion := scalafixSemanticdb.revision
 
 val jacksonVersion = "2.19.1"
+val tapirVersion = "1.11.36"
 
 lazy val root = (project in file("."))
   .enablePlugins(PlayScala)
@@ -23,7 +24,17 @@ lazy val root = (project in file("."))
       "com.auth0" % "java-jwt" % "4.5.0",
       "redis.clients" % "jedis" % "6.0.0",
       "com.h2database" % "h2" % "2.3.232" % Test,
-      "org.mockito" % "mockito-core" % "5.18.0" % Test
+      "org.mockito" % "mockito-core" % "5.18.0" % Test,
+      // Tapir dependencies
+      "com.softwaremill.sttp.tapir" %% "tapir-core" % tapirVersion,
+      "com.softwaremill.sttp.tapir" %% "tapir-play-server" % tapirVersion,
+      "com.softwaremill.sttp.tapir" %% "tapir-json-play" % tapirVersion,
+      "com.softwaremill.sttp.tapir" %% "tapir-swagger-ui-bundle" % tapirVersion,
+      "com.softwaremill.sttp.tapir" %% "tapir-openapi-docs" % tapirVersion,
+      "com.softwaremill.sttp.apispec" %% "openapi-circe-yaml" % "0.11.10",
+      "io.circe" %% "circe-core" % "0.14.10",
+      "io.circe" %% "circe-generic" % "0.14.10",
+      "io.circe" %% "circe-parser" % "0.14.10"
     ),
     // Add routing settings for Scala 3
     scalacOptions ++= Seq("-Xignore-scala2-macros", "-source:3.7"),

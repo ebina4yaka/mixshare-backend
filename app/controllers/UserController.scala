@@ -6,41 +6,26 @@ import javax.inject._
 import scala.concurrent.{ExecutionContext, Future}
 
 import actions.AuthAction
+import api.{ApiTypes, UserApi}
 import models.{User, UserRepository}
 import play.api.libs.json._
 import play.api.mvc._
 import service.AuthService
+import sttp.model.StatusCode
+import sttp.tapir._
+import sttp.tapir.json.play._
 
 @Singleton
 class UserController @Inject() (
     userRepository: UserRepository,
     authService: AuthService,
     authAction: AuthAction,
+    jwtService: service.JwtService,
     val controllerComponents: ControllerComponents
 )(implicit ec: ExecutionContext)
     extends BaseController {
 
-  // Safe user representation without sensitive fields
-  case class SafeUser(
-      id: Option[Long],
-      username: String,
-      createdAt: ZonedDateTime,
-      updatedAt: ZonedDateTime
-  )
-
-  // Registration request model
-  case class RegistrationRequest(
-      username: String,
-      email: String,
-      password: String
-  )
-
-  // Registration response model
-  case class RegistrationResponse(
-      success: Boolean,
-      message: String,
-      user: Option[SafeUser] = None
-  )
+  import ApiTypes._
 
   // Convert User to SafeUser
   private def toSafeUser(user: User): SafeUser = {
@@ -52,86 +37,100 @@ class UserController @Inject() (
     )
   }
 
-  // JSON formatters
-  implicit val safeUserFormat: OFormat[SafeUser] = Json.format[SafeUser]
-  implicit val registrationRequestFormat: Format[RegistrationRequest] =
-    Json.format[RegistrationRequest]
-  implicit val registrationResponseFormat: Format[RegistrationResponse] =
-    Json.format[RegistrationResponse]
+  // Convert User to UserProfileResponse
+  private def toUserProfileResponse(user: User): UserProfileResponse = {
+    UserProfileResponse(
+      id = user.id,
+      username = user.username,
+      email = user.email,
+      createdAt = user.createdAt,
+      updatedAt = user.updatedAt
+    )
+  }
 
   // GET endpoint to retrieve a user by ID
   def getUser(id: Long): Action[AnyContent] = Action.async { implicit request =>
     userRepository.getById(id).map {
       case Some(user) => Ok(Json.toJson(toSafeUser(user)))
       case None =>
-        NotFound(Json.obj("message" -> s"User with id $id not found"))
+        NotFound(Json.toJson(NotFoundResponse(s"User with id $id not found")))
     }
   }
 
   // POST endpoint to register a new user
-  def register(): Action[JsValue] = Action.async(parse.json) {
-    implicit request =>
-      val registerResult = request.body.validate[RegistrationRequest]
-
-      registerResult.fold(
-        errors => {
-          val errorMessages = JsError.toJson(errors)
-          Future.successful(
-            BadRequest(
-              Json.obj(
-                "success" -> false,
-                "message" -> "Invalid registration data",
-                "errors" -> errorMessages
+  def register(): Action[AnyContent] = Action.async { implicit request =>
+    request.body.asJson match {
+      case Some(json) =>
+        json.validate[RegistrationRequest] match {
+          case JsSuccess(registrationRequest, _) =>
+            // Input validation
+            val validationErrors = validateRegistration(registrationRequest)
+            if (validationErrors.nonEmpty) {
+              Future.successful(
+                BadRequest(
+                  Json.toJson(
+                    RegistrationResponse(
+                      success = false,
+                      message = validationErrors.mkString(", ")
+                    )
+                  )
+                )
               )
-            )
-          )
-        },
-        registration => {
-          // Input validation
-          val validationErrors = validateRegistration(registration)
-          if (validationErrors.nonEmpty) {
+            } else {
+              // Register user
+              authService
+                .register(
+                  registrationRequest.username,
+                  registrationRequest.email,
+                  registrationRequest.password
+                )
+                .map {
+                  case Right(user) =>
+                    Created(
+                      Json.toJson(
+                        RegistrationResponse(
+                          success = true,
+                          message = "User registered successfully",
+                          user = Some(toSafeUser(user))
+                        )
+                      )
+                    )
+                  case Left(errorMessage) =>
+                    Conflict(
+                      Json.toJson(
+                        RegistrationResponse(
+                          success = false,
+                          message = errorMessage
+                        )
+                      )
+                    )
+                }
+            }
+          case JsError(errors) =>
             Future.successful(
               BadRequest(
                 Json.toJson(
                   RegistrationResponse(
                     success = false,
-                    message = validationErrors.mkString(", ")
+                    message =
+                      s"Invalid request format: ${errors.mkString(", ")}"
                   )
                 )
               )
             )
-          } else {
-            // Register user
-            authService
-              .register(
-                registration.username,
-                registration.email,
-                registration.password
-              )
-              .map {
-                case Right(user) =>
-                  Created(
-                    Json.toJson(
-                      RegistrationResponse(
-                        success = true,
-                        message = "User registered successfully",
-                        user = Some(toSafeUser(user))
-                      )
-                    )
-                  )
-                case Left(errorMessage) =>
-                  Conflict(
-                    Json.toJson(
-                      RegistrationResponse(
-                        success = false,
-                        message = errorMessage
-                      )
-                    )
-                  )
-              }
-          }
         }
-      )
+      case None =>
+        Future.successful(
+          BadRequest(
+            Json.toJson(
+              RegistrationResponse(
+                success = false,
+                message = "Request body must be JSON"
+              )
+            )
+          )
+        )
+    }
   }
 
   // Validate registration input
@@ -181,24 +180,35 @@ class UserController @Inject() (
   }
 
   // Protected endpoint - Get current user profile
-  def getProfile: Action[AnyContent] = authAction.async { request =>
-    // The user ID is available from the authenticated request
-    val userId = request.userId
-
-    userRepository.getById(userId).map {
-      case Some(user) =>
-        Ok(
-          Json.toJson(
-            Json.obj(
-              "id" -> user.id,
-              "username" -> user.username,
-              "email" -> user.email,
-              "createdAt" -> user.createdAt,
-              "updatedAt" -> user.updatedAt
+  def getProfile: Action[AnyContent] = Action.async { implicit request =>
+    request.headers.get("Authorization") match {
+      case Some(authHeader) if authHeader.startsWith("Bearer ") =>
+        val token = authHeader.substring(7)
+        jwtService.verifyToken(token).flatMap {
+          case Some(claim) =>
+            val userId = claim.subject.toLong
+            userRepository.getById(userId).map {
+              case Some(user) =>
+                Ok(Json.toJson(toUserProfileResponse(user)))
+              case None =>
+                NotFound(Json.toJson(NotFoundResponse("User not found")))
+            }
+          case None =>
+            Future.successful(
+              Unauthorized(
+                Json.toJson(ErrorResponse("Invalid or expired token"))
+              )
+            )
+        }
+      case _ =>
+        Future.successful(
+          BadRequest(
+            Json.toJson(
+              ErrorResponse("Authorization header with Bearer token required")
             )
           )
         )
-      case None => NotFound(Json.obj("message" -> "User not found"))
     }
   }
+
 }
