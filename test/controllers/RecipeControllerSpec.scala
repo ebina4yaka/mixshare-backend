@@ -1,12 +1,14 @@
 package controllers
 
 import java.time.ZonedDateTime
+
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
+
 import helpers.{TestHelpers, TestWithDBCleaner}
 import models.{FindRecipesParams, Recipe, RecipeRepository}
-import org.mockito.ArgumentMatchers.*
-import org.mockito.Mockito.*
+import org.mockito.ArgumentMatchers._
+import org.mockito.Mockito._
 import org.scalatest.BeforeAndAfterEach
 import org.scalatestplus.mockito.MockitoSugar
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
@@ -14,8 +16,8 @@ import play.api.Application
 import play.api.inject.bind
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.json.{JsArray, Json}
-import play.api.test.Helpers.*
-import play.api.test.*
+import play.api.test.Helpers._
+import play.api.test._
 import service.{JwtService, RecipeService}
 
 class RecipeControllerSpec
