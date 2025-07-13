@@ -11,7 +11,7 @@ val tapirVersion = "1.11.36"
 lazy val root = (project in file("."))
   .enablePlugins(PlayScala)
   .settings(
-    name := "ss-api",
+    name := "mixshare",
     libraryDependencies ++= Seq(
       guice,
       evolutions,

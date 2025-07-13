@@ -166,7 +166,7 @@ A Docker Compose configuration is provided for development:
 ## 📁 Project Structure
 
 ```
-ss-api/
+/
 ├── app/
 │   ├── controllers/     # API controllers
 │   ├── models/         # Data models
