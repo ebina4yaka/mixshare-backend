@@ -40,12 +40,12 @@ A Web API project built with Play Framework (Scala 3).
 
 3. Copy the environment template file:
    ```bash
-   cp .env.example .envrc
+   cp .env.example .env
    ```
 
 4. Edit the values as needed:
    ```bash
-   nano .envrc
+   vim .envrc
    ```
 
 5. Allow direnv to load the environment:
