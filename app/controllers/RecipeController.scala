@@ -68,11 +68,14 @@ class RecipeController @Inject() (
     val params = ModelsFindRecipesParams(
       keyword = keyword,
       userId = userId match
-        case Some(userId) => Some(userId.toLong),
+        case Some(userId) => Some(userId.toLong)
+        case None         => None,
       pageSize = pageSize match
-        case Some(pageSize) => pageSize.toInt,
+        case Some(pageSize) => pageSize.toInt
+        case None           => 10,
       lastSeen = lastSeen match
         case Some(lastSeen) => Some(lastSeen.toLong)
+        case None           => None
     )
 
     recipeService.findRecipes(params).map { recipes =>
