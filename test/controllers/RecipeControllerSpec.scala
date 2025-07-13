@@ -1,14 +1,12 @@
 package controllers
 
 import java.time.ZonedDateTime
-
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
-
 import helpers.{TestHelpers, TestWithDBCleaner}
 import models.{FindRecipesParams, Recipe, RecipeRepository}
-import org.mockito.ArgumentMatchers._
-import org.mockito.Mockito._
+import org.mockito.ArgumentMatchers.*
+import org.mockito.Mockito.*
 import org.scalatest.BeforeAndAfterEach
 import org.scalatestplus.mockito.MockitoSugar
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
@@ -16,9 +14,9 @@ import play.api.Application
 import play.api.inject.bind
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.json.{JsArray, Json}
-import play.api.test.Helpers._
-import play.api.test._
-import service.RecipeService
+import play.api.test.Helpers.*
+import play.api.test.*
+import service.{JwtService, RecipeService}
 
 class RecipeControllerSpec
     extends TestWithDBCleaner
@@ -28,12 +26,14 @@ class RecipeControllerSpec
 
   val mockRecipeRepository: RecipeRepository = mock[RecipeRepository]
   val mockRecipeService: RecipeService = mock[RecipeService]
+  val mockJwtService: JwtService = mock[JwtService]
 
   override def fakeApplication(): Application = {
     GuiceApplicationBuilder()
       .overrides(
         bind[RecipeRepository].toInstance(mockRecipeRepository),
         bind[RecipeService].toInstance(mockRecipeService),
+        bind[JwtService].toInstance(mockJwtService),
         bind[services.MockModule].toInstance(new services.MockModule)
       )
       .build()
