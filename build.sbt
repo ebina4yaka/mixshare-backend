@@ -7,7 +7,7 @@ ThisBuild / scalaVersion := "3.7.0"
 ThisBuild / semanticdbEnabled := true
 ThisBuild / semanticdbVersion := scalafixSemanticdb.revision
 
-val jacksonVersion = "2.19.1"
+val jacksonVersion = "2.19.2"
 val tapirVersion = "1.11.37"
 
 lazy val root = (project in file("."))
