@@ -8,7 +8,7 @@ ThisBuild / semanticdbEnabled := true
 ThisBuild / semanticdbVersion := scalafixSemanticdb.revision
 
 val jacksonVersion = "2.19.1"
-val tapirVersion = "1.11.42"
+val tapirVersion = "1.11.44"
 
 lazy val root = (project in file("."))
   .enablePlugins(PlayScala)
