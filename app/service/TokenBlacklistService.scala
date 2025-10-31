@@ -95,7 +95,7 @@ class TokenBlacklistService @Inject() (
 
       result match {
         case scala.util.Success(exists) => exists
-        case scala.util.Failure(e) =>
+        case scala.util.Failure(e)      =>
           logger.error(
             s"Failed to check if token is blacklisted in Redis: ${e.getMessage}"
           )
