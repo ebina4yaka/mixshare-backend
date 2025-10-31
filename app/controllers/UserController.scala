@@ -52,7 +52,7 @@ class UserController @Inject() (
   def getUser(id: Long): Action[AnyContent] = Action.async { implicit request =>
     userRepository.getById(id).map {
       case Some(user) => Ok(Json.toJson(toSafeUser(user)))
-      case None =>
+      case None       =>
         NotFound(Json.toJson(NotFoundResponse(s"User with id $id not found")))
     }
   }

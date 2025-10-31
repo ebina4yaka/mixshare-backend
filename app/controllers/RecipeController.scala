@@ -52,7 +52,7 @@ class RecipeController @Inject() (
     implicit request =>
       recipeService.getRecipeById(id).map {
         case Some(recipe) => Ok(Json.toJson(toApiRecipe(recipe)))
-        case None =>
+        case None         =>
           NotFound(
             Json.toJson(NotFoundResponse(s"Recipe with id $id not found"))
           )
