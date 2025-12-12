@@ -49,7 +49,7 @@ lazy val root = (project in file("."))
       "com.auth0" % "java-jwt" % "4.5.0",
       "redis.clients" % "jedis" % "6.0.0",
       "com.h2database" % "h2" % "2.3.232" % Test,
-      "org.mockito" % "mockito-core" % "5.18.0" % Test,
+      "org.mockito" % "mockito-core" % "5.21.0" % Test,
       // Tapir dependencies
       "com.softwaremill.sttp.tapir" %% "tapir-core" % tapirVersion,
       "com.softwaremill.sttp.tapir" %% "tapir-play-server" % tapirVersion,
