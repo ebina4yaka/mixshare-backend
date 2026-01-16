@@ -41,7 +41,7 @@ lazy val root = (project in file("."))
       guice,
       evolutions,
       filters,
-      "org.postgresql" % "postgresql" % "42.7.7",
+      "org.postgresql" % "postgresql" % "42.7.9",
       "org.playframework" %% "play-slick" % "6.2.0",
       "org.playframework" %% "play-slick-evolutions" % "6.2.0",
       "org.scalatestplus.play" %% "scalatestplus-play" % "7.0.2" % Test,
