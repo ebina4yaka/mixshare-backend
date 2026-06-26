@@ -57,9 +57,9 @@ lazy val root = (project in file("."))
       "com.softwaremill.sttp.tapir" %% "tapir-swagger-ui-bundle" % tapirVersion,
       "com.softwaremill.sttp.tapir" %% "tapir-openapi-docs" % tapirVersion,
       "com.softwaremill.sttp.apispec" %% "openapi-circe-yaml" % "0.11.10",
-      "io.circe" %% "circe-core" % "0.14.14",
-      "io.circe" %% "circe-generic" % "0.14.14",
-      "io.circe" %% "circe-parser" % "0.14.14"
+      "io.circe" %% "circe-core" % "0.14.16",
+      "io.circe" %% "circe-generic" % "0.14.16",
+      "io.circe" %% "circe-parser" % "0.14.16"
     ),
     // Add routing settings for Scala 3
     scalacOptions ++= Seq("-Xignore-scala2-macros", "-source:3.7"),
